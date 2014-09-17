@@ -26,8 +26,10 @@ def parse_logger():
     if not os.path.exists(logger_path):
         print "No ping logger exists, something must be wrong!"
         return
-
-    print "Enter the function parse_logger"
+        
+    success = 0
+    loss  = 0
+    fail = 0
     f = open(logger_path)
     while True:
         line = f.readline()
@@ -53,9 +55,16 @@ def parse_logger():
             loss = loss[::-1]
             if loss == ' 0.0%':
                 print ip + ":" + loss + ' Pass'
+                success += 1
             elif loss != ' 100.0%':
                 print ip + ':' + loss + ' Loss'
+                loss  += 1
+            elif loss == ' 100.0%':
+                fail += 1
 
+    print "There are", success, " ping ok without any package loss"
+    print "There are", loss, " ping ok but with some package loss"
+    print "There are", fail, " ping fail"
     f.close()
 
 def ping_list(ip_prefix, lower_hostid, upper_hostid):
