@@ -1,14 +1,14 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.1)
 project(zmqtest)
 
+set (CMAKE_CXX_STANDARD 11)
 find_package(PkgConfig)
 pkg_check_modules(PC_LIBZMQ QUIET libzmq)
-find_library(ZeroMQ_LIBRARY NAMES libzmq.dylib
-             PATHS ${PC_LIBZMQ_LIBDIR} ${PC_LIBZMQ_LIBRARY_DIRS})
-find_library(ZeroMQ_STATIC_LIBRARY NAMES libzmq.a
+
+find_library(zmq_lib NAMES zmq
              PATHS ${PC_LIBZMQ_LIBDIR} ${PC_LIBZMQ_LIBRARY_DIRS})
 
-if(ZeroMQ_LIBRARY AND ZeroMQ_STATIC_LIBRARY)
+if(zmq_lib)
     set(ZeroMQ_FOUND ON)
 endif()
 
@@ -27,8 +27,18 @@ add_executable(
   )
 
 target_link_libraries(client.bin
-  ${ZeroMQ_STATIC_LIBRARY}
+  ${zmq_lib}
   )
 target_link_libraries(server.bin
-  ${ZeroMQ_STATIC_LIBRARY}
+  ${zmq_lib}
+  )
+
+add_executable(
+  sysinfo.bin
+  sysinfo.cpp
+  )
+
+add_executable(
+  metrics.bin
+  metrics.cpp
   )

@@ -1,12 +1,14 @@
 #include <iostream>
 #include <stdlib.h>
 #include <sys/sysinfo.h>
+#include <sys/statvfs.h>
 #include <errno.h>
+#include <unistd.h>
 
 int main() {
   struct sysinfo* sinfo = (struct sysinfo*)malloc(sizeof(struct sysinfo));
-
-  int ret = sysinfo(sinfo);
+  int ret = 0;
+  ret = sysinfo(sinfo);
   if (ret == EFAULT) {
     return 1;
   }
@@ -23,5 +25,13 @@ int main() {
   std::cout << "sinfo->freehigh: " << sinfo->freehigh << " bytes" << std::endl;
   std::cout << "sinfo->mem_unit: " << sinfo->mem_unit << " bytes" << std::endl;
   std::cout << "sinfo->procs: " << sinfo->procs << std:: endl;
+
+  std::cout << "nbr of processes configured: " << sysconf(_SC_NPROCESSORS_CONF) << std::endl;
+  std::cout << "nbr of processes available: " << sysconf(_SC_NPROCESSORS_ONLN) << std::endl;
+
+  struct statvfs *svfs = (struct statvfs*)malloc(sizeof(struct statvfs));
+  ret = statvfs("/", svfs);
+  std::cout << "svfs->f_bsize: " << svfs->f_bsize << std::endl;
+
   return 0;
 }
