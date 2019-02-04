@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <iterator>
 
+#include "json.hpp"
+
+using JSON = nlohmann::json;
 // memory metrics
 // struct sinfo {
 //   long uptime;             /* Seconds since boot */
@@ -61,6 +64,41 @@ struct cpuinfo {
   unsigned long guest;
   unsigned long guest_nice;
   char name[8];
+
+  JSON load(std::string cpuInfoStr) {
+    JSON cpu = JSON::parse(cpuInfoStr);
+    return cpu;
+  }
+  JSON load() {
+    JSON cpu;
+    cpu["name"] = name;
+    cpu["user"] = user;
+    cpu["nice"] = nice;
+    cpu["system"] = system;
+    cpu["idle"] = idle;
+    cpu["iowait"] = iowait;
+    cpu["irq"] = irq;
+    cpu["softirq"] = softirq;
+    cpu["steal"] = steal;
+    cpu["guest"] = guest;
+    cpu["guest_nice"] = guest_nice;
+    return cpu;
+  }
+  std::string dump() {
+    JSON cpu;
+    cpu["name"] = name;
+    cpu["user"] = user;
+    cpu["nice"] = nice;
+    cpu["system"] = system;
+    cpu["idle"] = idle;
+    cpu["iowait"] = iowait;
+    cpu["irq"] = irq;
+    cpu["softirq"] = softirq;
+    cpu["steal"] = steal;
+    cpu["guest"] = guest;
+    cpu["guest_nice"] = guest_nice;
+    return cpu.dump();
+  }
 };
 
 class Metrics {
@@ -68,10 +106,7 @@ public:
   Metrics() {
     this->sinfo = (struct sysinfo *)malloc(sizeof(struct sysinfo));
     this->svfs = (struct statvfs *)malloc(sizeof(struct statvfs));
-    this->nbrProcessors = sysconf( _SC_NPROCESSORS_ONLN );
-    // for (int i = 0; i < this->nbrProcessors; i ++) {
-    //   this->cinfoVec.push_back((struct cpuinfo *)malloc(sizeof(struct cpuinfo)));
-    // }
+
     int ret;
     ret = sysinfo(this->sinfo);
     if (ret == EFAULT) {
@@ -82,6 +117,8 @@ public:
       exit(1);
     }
     this->readProcStat();
+    // this->nbrProcessors = sysconf( _SC_NPROCESSORS_ONLN );
+    this->nbrProcessors = this->cinfoVec.size() - 1;
   }
 
   ~Metrics() {
@@ -119,6 +156,9 @@ public:
     return this->sinfo->sharedram;
   }
   void print();
+  std::string dump();
+  JSON load(const char* metricsBuffer);
+
 private:
   void readProcStat();
 

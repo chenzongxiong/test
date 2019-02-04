@@ -41,4 +41,5 @@ add_executable(
 add_executable(
   metrics.bin
   metrics.cpp
+  test_metrics.cpp
   )

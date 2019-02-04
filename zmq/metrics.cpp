@@ -70,15 +70,48 @@ void Metrics::readProcStat() {
     }
   }
   // sanity check
-  if (this->cinfoVec.size() != (this->nbrProcessors + 1)) {
-    std::cout << "this->cinfoVec.size(): " << this->cinfoVec.size() << ", this->nbrProcessors: " << this->nbrProcessors << std::endl;
-    std::cout << "ERROR: cpuinfo counts" << std::endl;
-  }
+  // if (this->cinfoVec.size() != (this->nbrProcessors + 1)) {
+  //   std::cout << "this->cinfoVec.size(): " << this->cinfoVec.size() << ", this->nbrProcessors: " << this->nbrProcessors << std::endl;
+  //   std::cout << "ERROR: cpuinfo counts" << std::endl;
+  // }
 }
 
-int main() {
-  Metrics *metrics = new Metrics();
-  metrics->print();
-  return 0;
+std::string Metrics::dump() {
+  JSON m;
+  JSON memory;
+  memory["totalram"] = this->sinfo->totalram;
+  memory["totalswap"] = this->sinfo->totalswap;
+  memory["freeram"] = this->sinfo->freeram;
+  memory["sharedram"] = this->sinfo->sharedram;
+  memory["bufferram"] = this->sinfo->bufferram;
+  memory["freeswap"] = this->sinfo->freeswap;
+  memory["totalhigh"] = this->sinfo->totalhigh;
+  memory["freehigh"] = this->sinfo->freehigh;
+  memory["procs"] = this->sinfo->procs;
+  memory["mem_unit"] = this->sinfo->mem_unit;
+  memory["loads_1min"] = this->sinfo->loads[0];
+  memory["loads_5min"] = this->sinfo->loads[1];
+  memory["loads_15min"] = this->sinfo->loads[2];
 
+  JSON fs;
+  fs["f_bsize"] = this->svfs->f_bsize;
+  fs["f_frsize"] = this->svfs->f_frsize;
+  fs["f_blocks"] = this->svfs->f_blocks;
+  fs["f_bfree"] = this->svfs->f_bfree;
+  fs["f_bavail"] = this->svfs->f_bavail;
+
+  JSON cpus;
+  for (auto& cpu : this->cinfoVec) {
+    cpus.push_back(cpu->load());
+  }
+
+  m["mem"] = memory;
+  m["fs"] = fs;
+  m["cpus"] = cpus;
+  return m.dump();
+}
+
+JSON Metrics::load(const char* metricsBuffer) {
+  JSON metrics = JSON::parse(metricsBuffer);
+  return metrics;
 }
