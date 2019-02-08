@@ -1,5 +1,11 @@
 #include <sys/sysinfo.h>
 #include <sys/statvfs.h>
+#include <sys/types.h>
+#include <ifaddrs.h>
+#include <linux/if_link.h>
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
@@ -47,12 +53,12 @@ using JSON = nlohmann::json;
 // read from /proc/stat
 // TODO
 // network metrics
+
 typedef unsigned long uint64_t;
 
 #define PROC_STAT_CPU_COLUMNS 11
 
 struct cpuinfo {
-  // std::string name;
   unsigned long user;
   unsigned long nice;
   unsigned long system;
@@ -101,12 +107,15 @@ struct cpuinfo {
   }
 };
 
+struct netinfo {
+  char name[NI_MAXHOST];
+};
+
 class Metrics {
 public:
   Metrics() {
     this->sinfo = (struct sysinfo *)malloc(sizeof(struct sysinfo));
     this->svfs = (struct statvfs *)malloc(sizeof(struct statvfs));
-
     int ret;
     ret = sysinfo(this->sinfo);
     if (ret == EFAULT) {
@@ -116,55 +125,65 @@ public:
     if (ret == EFAULT) {
       exit(1);
     }
-    this->readProcStat();
+    this->readCpuStats();
     // this->nbrProcessors = sysconf( _SC_NPROCESSORS_ONLN );
     this->nbrProcessors = this->cinfoVec.size() - 1;
+
+    this->readNetworkStats();
+    // this->_metrics["mem"] = this->_memory;
+    // this->_metrics["fs"] = this->_fs;
+    // this->_metrics["cpus"] = this->_cpus;
+
   }
 
   ~Metrics() {
-    free(this->sinfo);
-    free(this->svfs);
+    if (this->sinfo)
+      free(this->sinfo);
+    if (this->svfs)
+      free(this->svfs);
+    if (this->ifaddr)
+      freeifaddrs(this->ifaddr);
   }
 
-  // static metrics
-  uint64_t totalram() {
-    return this->sinfo->totalram;
-  }
-  uint64_t totalswap() {
-    return this->sinfo->totalswap;
-  }
-  uint64_t ncpus() {
-    return this->nbrProcessors;
-  }
-  // dynamic metrics
-  uint64_t uptime() {
-    return this->sinfo->uptime;
-  }
-  uint64_t freeram() {
-    return this->sinfo->freeram;
-  }
-  uint64_t freeswap() {
-    return this->sinfo->freeswap;
-  }
-  uint64_t procs() {
-    return this->sinfo->procs;
-  }
-  uint64_t bufferram() {
-    return this->sinfo->bufferram;
-  }
-  uint64_t sharedram() {
-    return this->sinfo->sharedram;
-  }
   void print();
-  std::string dump();
-  JSON load(const char* metricsBuffer);
+  std::string dump(int setw=-1);
+  JSON load(const char *metricsBuffer);
 
 private:
-  void readProcStat();
+  void readCpuStats();           // read cpu inforamtion
+  void readMemStats();           // read memory information
+  void readFsStats();            // read file system information
+
+// public:
+  void readNetworkStats();       // read network information
+  void _iterateNICs(const char *name);
 
 private:
-  struct sysinfo* sinfo;
-  struct statvfs* svfs;
+  /*
+   * memory information
+   * /proc/meminfo
+   * /proc/loadavg
+   */
+  struct sysinfo *sinfo;
+  /*
+   * file system information
+   * /proc/diskstats
+   */
+  struct statvfs *svfs;
+  /*
+   * network information
+   * /proc/net/dev
+   *
+   */
+  struct ifaddrs *ifaddr;
+
+  std::vector<struct ifaddrs*> networkStats;
   std::vector<struct cpuinfo*> cinfoVec;
   long nbrProcessors;
+
+  JSON _metrics;
+  JSON _mem;
+  JSON _fs;
+  JSON _cpus;
+  JSON _nets;
 };
