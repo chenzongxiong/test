@@ -80,50 +80,6 @@ void Metrics::readCpuStats() {
 }
 
 void Metrics::readNetworkStats() {
-
-  // struct if_nameindex *if_ni, *i;
-
-  // if_ni = if_nameindex();
-  // ifr.ifr_addr.sa_family = AF_INET;
-
-  // if (if_ni == NULL) {
-  //   perror("if_nameindex");
-  //   return;
-  // }
-
-  // int s;
-  // char host[NI_MAXHOST];
-  // JSON net;
-  // char mac_addr[6];
-  // for (i = if_ni; ! (i->if_index == 0 && i->if_name == NULL); i++) {
-  //   strncpy(ifr.ifr_name , i->if_name , IFNAMSIZ-1);
-  //   ioctl(fd, SIOCGIFFLAGS, &ifr);
-  //   // std::cout << i->if_name << ": loopback-> " << (ifr.ifr_flags & IFF_LOOPBACK) << std::endl;
-  //   if ( (ifr.ifr_flags & IFF_UP) &&
-  //        ! (ifr.ifr_flags & IFF_LOOPBACK)) {
-
-  //     ioctl(fd, SIOCGIFADDR, &ifr);
-  //     s = getnameinfo(&ifr.ifr_addr,
-  //                     sizeof(struct sockaddr_in),
-  //                     host, NI_MAXHOST,
-  //                     NULL, 0, NI_NUMERICHOST);
-  //     if (s != 0) {
-  //       perror("ERROR: getnameinfo failed");
-  //       continue;
-  //     }
-  //     std::cout << i->if_name << ": " << host << std::endl;
-  //     ioctl(fd, SIOCGIFHWADDR, &ifr);
-  //     for (unsigned int i = 0; i < 6; i ++) {
-  //       mac_addr[i] = ifr.ifr_hwaddr.sa_data[i];
-  //     }
-  //     printf("%s: mac-> %.2x:%.2x:%.2x:%.2x:%.2x:%.2x\n", i->if_name, mac_addr[0], mac_addr[1], mac_addr[2],
-  //            mac_addr[3], mac_addr[4], mac_addr[5]);
-  //     ioctl(fd, SIOCGIFMTU, &ifr);
-  //     std::cout << i->if_name << ": mtu-> " << ifr.ifr_mtu << std::endl;
-  //   }
-  // }
-  // if_freenameindex(if_ni);
-
   struct ifaddrs* ifa;
 
   int family, s;
@@ -196,76 +152,45 @@ void Metrics::readNetworkStats() {
       this->_nets.push_back(net);
     }
   }
-
-  // char str[1024] = {0};
-
-  // DIR *dir;
-  // struct dirent *ent;
-  // if ((dir = opendir("/sys/class/net")) != NULL) {
-  //   while ((ent = readdir(dir)) != NULL) {
-  //     // sprintf(str, "/sys/class/net/%s", ent->d_name);
-  //     if (strcmp(ent->d_name, ".") &&
-  //         strcmp(ent->d_name, "..")) {
-  //       // std::cout << "========================================" << std::endl;
-  //       // std::cout << str << std::endl;
-  //       this->_iterateNICs(ent->d_name);
-  //     }
-  //   }
-  //   closedir(dir);
-  // }
-
 }
 
-void Metrics::_iterateNICs(const char *name) {
-  char path[512] = {0};
-  DIR *dir;
-  struct dirent *ent;
-  sprintf(path, "/sys/class/net/%s", name);
-  if ((dir = opendir(path)) != NULL) {
-    while ((ent = readdir(dir)) != NULL) {
-      if (strcmp(ent->d_name, ".") &&
-          strcmp(ent->d_name, "..")) {
-        // std::cout << ent->d_name << std::endl;
-        // FILE *file = NULL;
-        // if ((file = fopen()))
-      }
-    }
-  }
+void Metrics::readMemStats() {
+  int ret = sysinfo(this->sinfo);
+  if (ret == EFAULT)
+    perror("ERROR: read filesystem ");
 
+  this->_mem["totalram"] = this->sinfo->totalram;
+  this->_mem["totalswap"] = this->sinfo->totalswap;
+  this->_mem["freeram"] = this->sinfo->freeram;
+  this->_mem["sharedram"] = this->sinfo->sharedram;
+  this->_mem["bufferram"] = this->sinfo->bufferram;
+  this->_mem["freeswap"] = this->sinfo->freeswap;
+  this->_mem["totalhigh"] = this->sinfo->totalhigh;
+  this->_mem["freehigh"] = this->sinfo->freehigh;
+  this->_mem["procs"] = this->sinfo->procs;
+  this->_mem["mem_unit"] = this->sinfo->mem_unit;
+  this->_mem["loads_1min"] = this->sinfo->loads[0];
+  this->_mem["loads_5min"] = this->sinfo->loads[1];
+  this->_mem["loads_15min"] = this->sinfo->loads[2];
 }
+
+void Metrics::readFsStats() {
+  int ret = statvfs("/", this->svfs);
+  if (ret == EFAULT)
+    perror("ERROR: read filesystem ");
+
+  this->_fs["f_bsize"] = this->svfs->f_bsize;
+  this->_fs["f_frsize"] = this->svfs->f_frsize;
+  this->_fs["f_blocks"] = this->svfs->f_blocks;
+  this->_fs["f_bfree"] = this->svfs->f_bfree;
+  this->_fs["f_bavail"] = this->svfs->f_bavail;
+}
+
 std::string Metrics::dump(int setw) {
-  // JSON m;
-  // JSON memory;
-  // memory["totalram"] = this->sinfo->totalram;
-  // memory["totalswap"] = this->sinfo->totalswap;
-  // memory["freeram"] = this->sinfo->freeram;
-  // memory["sharedram"] = this->sinfo->sharedram;
-  // memory["bufferram"] = this->sinfo->bufferram;
-  // memory["freeswap"] = this->sinfo->freeswap;
-  // memory["totalhigh"] = this->sinfo->totalhigh;
-  // memory["freehigh"] = this->sinfo->freehigh;
-  // memory["procs"] = this->sinfo->procs;
-  // memory["mem_unit"] = this->sinfo->mem_unit;
-  // memory["loads_1min"] = this->sinfo->loads[0];
-  // memory["loads_5min"] = this->sinfo->loads[1];
-  // memory["loads_15min"] = this->sinfo->loads[2];
-
-  // JSON fs;
-  // fs["f_bsize"] = this->svfs->f_bsize;
-  // fs["f_frsize"] = this->svfs->f_frsize;
-  // fs["f_blocks"] = this->svfs->f_blocks;
-  // fs["f_bfree"] = this->svfs->f_bfree;
-  // fs["f_bavail"] = this->svfs->f_bavail;
-
-  // JSON cpus;
-
-  // m["mem"] = memory;
-  // m["fs"] = fs;
-  // m["cpus"] = cpus;
+  this->_metrics["cpus"] = this->_cpus;
+  this->_metrics["nets"] = this->_nets;
   this->_metrics["fs"] = this->_fs;
   this->_metrics["mem"] = this->_mem;
-  // this->_metrics["cpus"] = this->_cpus;
-  this->_metrics["nets"] = this->_nets;
   return _metrics.dump(setw);
 }
 

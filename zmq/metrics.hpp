@@ -116,24 +116,13 @@ public:
   Metrics() {
     this->sinfo = (struct sysinfo *)malloc(sizeof(struct sysinfo));
     this->svfs = (struct statvfs *)malloc(sizeof(struct statvfs));
-    int ret;
-    ret = sysinfo(this->sinfo);
-    if (ret == EFAULT) {
-      exit(1);
-    }
-    ret = statvfs("/", this->svfs);
-    if (ret == EFAULT) {
-      exit(1);
-    }
+
     this->readCpuStats();
     // this->nbrProcessors = sysconf( _SC_NPROCESSORS_ONLN );
     this->nbrProcessors = this->cinfoVec.size() - 1;
-
     this->readNetworkStats();
-    // this->_metrics["mem"] = this->_memory;
-    // this->_metrics["fs"] = this->_fs;
-    // this->_metrics["cpus"] = this->_cpus;
-
+    this->readMemStats();
+    this->readFsStats();
   }
 
   ~Metrics() {
@@ -153,10 +142,7 @@ private:
   void readCpuStats();           // read cpu inforamtion
   void readMemStats();           // read memory information
   void readFsStats();            // read file system information
-
-// public:
   void readNetworkStats();       // read network information
-  void _iterateNICs(const char *name);
 
 private:
   /*
